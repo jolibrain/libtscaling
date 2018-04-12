@@ -173,4 +173,91 @@ int main(int argc, char **argv)
   celwt.setData(logits,labels);
 
   std::cout<< "final temperature : " << celwt.calibrate() << std::endl;
+
+  CalibrationError ce(10);
+  std::vector<double> confs {0.8,0.7,0.3};
+  std::vector<int> preds {0, 3, 4 };
+  std::vector<int> targets {0, 3, 2 };
+  ce.setData(confs,preds, targets);
+  std::cout << "mce: " << ce.MCE() << "    ece: " << ce.ECE() << std::endl;
+}
+
+CalibrationError::CalibrationError(int nbins): confs_(NULL), predictions_(NULL), targets_(NULL), nbins_(nbins)
+{
+  bins_ = std::vector<std::vector<int> >(nbins);
+}
+
+
+CalibrationError::CalibrationError(std::vector<double>& confidences,
+                                   std::vector<int>& predictions,
+                                   std::vector<int>& targets, int nbins) :
+  confs_(&confidences), predictions_(&predictions), targets_(&targets), nbins_(nbins)
+{
+  bins_ = std::vector<std::vector<int> >(nbins);
+  fill_bins();
+}
+
+void CalibrationError::setData(std::vector<double>& confidences, std::vector<int>& predictions,
+                         std::vector<int>& targets)
+{
+  confs_ = &confidences;
+  predictions_ = &predictions;
+  targets_ = &targets;
+  fill_bins();
+}
+
+void CalibrationError::fill_bins()
+{
+  for (int i =0; i< confs_->size(); ++i)
+    bins_[static_cast<int>(confs_->at(i)*nbins_)].push_back(i);
+}
+
+double CalibrationError::bin_acc(int bi)
+{
+  if (bins_[bi].size() == 0)
+    return 0;
+  int correct = 0;
+  for (int i:bins_[bi])
+    if (targets_[i] == predictions_[i])
+      correct += 1;
+  return (double) correct / double(bins_[bi].size());
+}
+
+double CalibrationError::bin_conf(int bi)
+{
+  if (bins_[bi].size() == 0)
+    return 0;
+  double sum = 0;
+  for (int i:bins_[bi])
+    sum += confs_->at(i);
+  return sum / (double) bins_[bi].size();
+}
+
+double CalibrationError::ECE()
+{
+  double ece = 0;
+  double ntot = 0;
+  for (int bi = 0; bi< nbins_; ++bi)
+    {
+      int bm = bins_[bi].size();
+      if (bm == 0)
+        continue;
+      ntot += bm;
+      ece += fabs(bin_acc(bi) - bin_conf(bi)) * bm;
+    }
+  return ece / (double) ntot;
+}
+
+double CalibrationError::MCE()
+{
+  double mce = 0;
+  for (int bi = 0; bi < nbins_; ++bi)
+    {
+      if (bins_[bi].size() == 0)
+        continue;
+      double v = fabs(bin_acc(bi) - bin_conf(bi));
+      if (v> mce)
+        mce = v;
+    }
+  return mce;
 }
