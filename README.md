@@ -7,4 +7,8 @@ compile against liblbfgs-dev on ubuntu
 
 
 compile using eigen against LBFGSPP (included):
+
 g++  -DLBFGSPP -I/usr/include/eigen3  -O2 tscaling.cpp -std=c++11 -o cal 
+
+
+LBFGSPP is here: https://github.com/yixuan/LBFGSpp
