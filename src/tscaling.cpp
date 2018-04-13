@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <iostream>
-
+#include <fstream>
 
 #include "tscaling.h"
 
@@ -172,14 +172,16 @@ int main(int argc, char **argv)
 
   celwt.setData(logits,labels);
 
-  std::cout<< "final temperature : " << celwt.calibrate() << std::endl;
+   std::cout<< "final temperature : " << celwt.calibrate() << std::endl;
 
-  CalibrationError ce(10);
-  std::vector<double> confs {0.8,0.7,0.3};
-  std::vector<int> preds {0, 3, 4 };
-  std::vector<int> targets {0, 3, 2 };
+  CalibrationError ce(3);
+  std::vector<double> confs {0.8,0.7,0.3, 1.0, 0.0};
+  std::vector<int> preds {0, 3, 4, 5, 2 };
+  std::vector<int> targets {0, 3, 2, 5, 7};
   ce.setData(confs,preds, targets);
   std::cout << "mce: " << ce.MCE() << "    ece: " << ce.ECE() << std::endl;
+  ce.display();
+  ce.to_py("graphs.py");
 }
 
 CalibrationError::CalibrationError(int nbins): confs_(NULL), predictions_(NULL), targets_(NULL), nbins_(nbins), cached_(false)
@@ -214,7 +216,12 @@ void CalibrationError::setData(std::vector<double>& confidences, std::vector<int
 void CalibrationError::fill_bins()
 {
   for (int i =0; i< confs_->size(); ++i)
-    bins_[static_cast<int>(confs_->at(i)*nbins_)].push_back(i);
+    {
+      int bi = static_cast<int>(confs_->at(i)*nbins_);
+      if (bi == confs_->at(i)*nbins_ && bi != 0)
+        bi--;
+      bins_[bi].push_back(i);
+    }
   for (int bi = 0; bi< nbins_; ++bi)
     {
       bin_acc(bi);
@@ -240,7 +247,7 @@ double CalibrationError::bin_acc(int bi)
     }
   int correct = 0;
   for (int i:bins_[bi])
-    if (targets_[i] == predictions_[i])
+    if (targets_->at(i) == predictions_->at(i))
       correct += 1;
   double acc = (double) correct / double(bins_[bi].size());
   bin_acc_cache_[bi] = acc;
@@ -291,4 +298,87 @@ double CalibrationError::MCE()
         mce = v;
     }
   return mce;
+}
+
+void CalibrationError::display()
+{
+  for (int i =0; i<nbins_; ++i)
+    {
+      std::cout << "bin " << i << " :]" << (double)i/(double)nbins_<<":"<<(double)(i+1)/(double)nbins_<<"]";
+      std::cout << " : {";
+      for (int j =0; j<bins_[i].size(); ++j)
+        std::cout << bins_[i][j] << ",";
+      std::cout << "}   acc = "<< bin_acc(i) << "    conf = " << bin_conf(i) << std::endl;
+    }
+}
+
+void CalibrationError::edges(std::vector<double>& edges)
+{
+  for (int i=0; i<nbins_; ++i)
+    edges.push_back((double)i/(double)nbins_);
+}
+
+
+void CalibrationError::percents(std::vector<double>& percents)
+{
+  int tot = 0;
+
+  for (int i=0; i<nbins_; ++i)
+    {
+      int n = bins_[i].size();
+      percents.push_back(n);
+      tot += n;
+    }
+  for (int i=0; i<nbins_; ++i)
+    percents[i] /= (double)tot;
+}
+
+void CalibrationError::accuracies(std::vector<double>& accuracies)
+{
+  for (int i=0; i<nbins_; ++i)
+    accuracies.push_back(bin_acc(i));
+}
+
+void CalibrationError::to_py(std::string fname)
+{
+  std::ofstream file;
+  file.open (fname);
+  std::vector<double> redges;
+  edges(redges);
+  std::vector<double> rpercents;
+  percents(rpercents);
+  std::vector<double> raccuracies;
+  accuracies(raccuracies);
+
+  file << "import matplotlib.pyplot" << std::endl;
+
+  double width = 1.0/(double)nbins_;
+  file << "width = " << width << std::endl;
+  file << "centers = [";
+  for (int i=0; i<nbins_-1; ++i)
+    file << redges[i] + width/2 << ",";
+  file << redges[nbins_-1] + width/2 << "]\n";
+
+  file << "percents = [";
+  for (int i=0; i<nbins_-1; ++i)
+    file << rpercents[i] << ",";
+  file << rpercents[nbins_-1] << "]\n";
+
+  file << "accuracies = [";
+  for (int i=0; i<nbins_-1; ++i)
+    file << raccuracies[i] << ",";
+  file << raccuracies[nbins_-1] << "]\n";
+
+  file << "matplotlib.pyplot.bar(centers,percents,width)" << std::endl;
+  file << "matplotlib.pyplot.xlabel('confidence')" << std::endl;
+  file << "matplotlib.pyplot.ylabel('% samples')" << std::endl;
+  file << "matplotlib.pyplot.savefig('conf_repartition.pdf')" << std::endl;
+  file << "matplotlib.pyplot.clf()" << std::endl;
+  file << "matplotlib.pyplot.bar(centers,accuracies,width)" << std::endl;
+  file << "matplotlib.pyplot.xlabel('confidence')" << std::endl;
+  file << "matplotlib.pyplot.ylabel('accuracy')" << std::endl;
+  file << "matplotlib.pyplot.savefig('conf_accuracy.pdf')" << std::endl;
+
+  file.close();
+
 }
