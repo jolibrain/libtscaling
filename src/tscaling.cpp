@@ -182,18 +182,22 @@ int main(int argc, char **argv)
   std::cout << "mce: " << ce.MCE() << "    ece: " << ce.ECE() << std::endl;
 }
 
-CalibrationError::CalibrationError(int nbins): confs_(NULL), predictions_(NULL), targets_(NULL), nbins_(nbins)
+CalibrationError::CalibrationError(int nbins): confs_(NULL), predictions_(NULL), targets_(NULL), nbins_(nbins), cached_(false)
 {
   bins_ = std::vector<std::vector<int> >(nbins);
+  bin_acc_cache_ = std::vector<double>(nbins);
+  bin_conf_cache_ = std::vector<double>(nbins);
 }
 
 
 CalibrationError::CalibrationError(std::vector<double>& confidences,
                                    std::vector<int>& predictions,
                                    std::vector<int>& targets, int nbins) :
-  confs_(&confidences), predictions_(&predictions), targets_(&targets), nbins_(nbins)
+  confs_(&confidences), predictions_(&predictions), targets_(&targets), nbins_(nbins), cached_(false)
 {
   bins_ = std::vector<std::vector<int> >(nbins);
+  bin_acc_cache_ = std::vector<double>(nbins);
+  bin_conf_cache_ = std::vector<double>(nbins);
   fill_bins();
 }
 
@@ -203,6 +207,7 @@ void CalibrationError::setData(std::vector<double>& confidences, std::vector<int
   confs_ = &confidences;
   predictions_ = &predictions;
   targets_ = &targets;
+  clear_bins();
   fill_bins();
 }
 
@@ -210,27 +215,53 @@ void CalibrationError::fill_bins()
 {
   for (int i =0; i< confs_->size(); ++i)
     bins_[static_cast<int>(confs_->at(i)*nbins_)].push_back(i);
+  for (int bi = 0; bi< nbins_; ++bi)
+    {
+      bin_acc(bi);
+      bin_conf(bi);
+    }
+  cached_ = true;
+}
+
+void CalibrationError::clear_bins()
+{
+  for (auto v: bins_)
+    v.clear();
 }
 
 double CalibrationError::bin_acc(int bi)
 {
+  if (cached_)
+    return bin_acc_cache_[bi];
   if (bins_[bi].size() == 0)
-    return 0;
+    {
+      bin_acc_cache_[bi] = 0;
+      return 0;
+    }
   int correct = 0;
   for (int i:bins_[bi])
     if (targets_[i] == predictions_[i])
       correct += 1;
-  return (double) correct / double(bins_[bi].size());
+  double acc = (double) correct / double(bins_[bi].size());
+  bin_acc_cache_[bi] = acc;
+  return acc;
 }
 
 double CalibrationError::bin_conf(int bi)
 {
+  if (cached_)
+    return bin_conf_cache_[bi];
   if (bins_[bi].size() == 0)
-    return 0;
+    {
+      bin_conf_cache_[bi] = 0;
+      return 0;
+    }
   double sum = 0;
   for (int i:bins_[bi])
     sum += confs_->at(i);
-  return sum / (double) bins_[bi].size();
+  double conf = sum / (double) bins_[bi].size();
+  bin_conf_cache_[bi] = conf;
+  return conf;
 }
 
 double CalibrationError::ECE()
