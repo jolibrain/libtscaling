@@ -65,3 +65,35 @@ class TempScaler
 #endif
 
 };
+
+
+class CalibrationError{
+ private:
+  std::vector<double>* confs_; // confidence of prediction i
+  std::vector<int>* predictions_;
+  std::vector<int>* targets_;
+  std::vector<std::vector<int> > bins_;
+  std::vector<double> bin_acc_cache_;
+  std::vector<double> bin_conf_cache_;
+  int nbins_;
+  bool cached_;
+ public:
+  CalibrationError(std::vector<double>& confidences, std::vector<int>& predictions, std::vector<int>& targets, int nbins);
+  CalibrationError(int nbins);
+  void setData(std::vector<double>& confidences, std::vector<int>& predictions,
+               std::vector<int>& targets);
+  double ECE();
+  double bin_acc(int bi);
+  double bin_conf(int bi);
+  double MCE();
+  void display();
+  void accuracies(std::vector<double>& accuracies);
+  void percents(std::vector<double>& percents);
+  void edges(std::vector<double>& edges);
+  void to_py(std::string fname);
+
+ private:
+  void fill_bins();
+  void clear_bins();
+
+};
