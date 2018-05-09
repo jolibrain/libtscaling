@@ -107,7 +107,7 @@ double TempScaler::crossEntropyLossWithTemperature(const double& x, double& gx)
   double sum_fx = 0;
   double sum_gfx = 0;
 
-  for (int bi = 0; bi < logits_->size(); ++bi)
+  for (unsigned int bi = 0; bi < logits_->size(); ++bi)
     {
       const std::vector<double>& logits = (*logits_)[bi];
       const int label = (*labels_)[bi];
@@ -215,7 +215,7 @@ void CalibrationError::setData(std::vector<double>& confidences, std::vector<int
 
 void CalibrationError::fill_bins()
 {
-  for (int i =0; i< confs_->size(); ++i)
+  for (unsigned int i =0; i< confs_->size(); ++i)
     {
       int bi = static_cast<int>(confs_->at(i)*nbins_);
       if (bi == confs_->at(i)*nbins_ && bi != 0)
@@ -306,7 +306,7 @@ void CalibrationError::display()
     {
       std::cout << "bin " << i << " :]" << (double)i/(double)nbins_<<":"<<(double)(i+1)/(double)nbins_<<"]";
       std::cout << " : {";
-      for (int j =0; j<bins_[i].size(); ++j)
+      for (unsigned int j =0; j<bins_[i].size(); ++j)
         std::cout << bins_[i][j] << ",";
       std::cout << "}   acc = "<< bin_acc(i) << "    conf = " << bin_conf(i) << std::endl;
     }
