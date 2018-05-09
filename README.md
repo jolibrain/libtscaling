@@ -1,5 +1,7 @@
 # libtscaling
 Temperature scaling for neural network calibration
+idea from  https://arxiv.org/abs/1706.04599
+
 
 compile against liblbfgs-dev on ubuntu
 
@@ -12,3 +14,4 @@ g++  -DLBFGSPP -I/usr/include/eigen3  -O2 tscaling.cpp -std=c++11 -o cal
 
 
 LBFGSPP is here: https://github.com/yixuan/LBFGSpp
+
