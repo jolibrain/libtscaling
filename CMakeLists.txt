@@ -9,7 +9,7 @@ OPTION(BUILD_TEST "build test app")
 find_library(LBFGS_LIB lbfgs)
 
 if (BUILD_TEST)
-  add_executable(cal ${SOURCES})
+  add_executable(test_tscaling ${SOURCES})
 endif()
 
 add_library(tscaling SHARED ${SOURCES})
@@ -22,9 +22,9 @@ if (USE_LBFGSPP)
   include_directories(${EIGEN3_INCLUDE_DIR})
 else()
   if (BUILD_TEST)
-    target_link_libraries(test_tscaling $LBFGS_LIB)
+    target_link_libraries(test_tscaling ${LBFGS_LIB})
   endif()
-  target_link_libraries(tscaling $LBFGS_LIB)
+  target_link_libraries(tscaling ${LBFGS_LIB})
 endif()
 
 
