@@ -96,6 +96,31 @@ double TempScaler::operator()(const Eigen::VectorXd &x , Eigen::VectorXd& grad)
 #endif
 
 
+void TempScaler::getPredConf(std::vector<double>& logits, int &pred, double&conf)
+{
+  double sum = exp(logits[0]);
+  double max_exp = sum;
+  for (unsigned int i =1; i<logits.size(); ++i)
+    {
+      double cur_exp = exp(logits[i]);
+      sum += cur_exp;
+      if (cur_exp > max_exp)
+        {
+          max_exp = cur_exp;
+          pred = i;
+        }
+    }
+  conf = max_exp / sum;
+}
+
+void TempScaler::getPredConfBatch(std::vector<std::vector<double> > logitbatch, std::vector<int>& preds, std::vector<double>&confs)
+{
+  for (unsigned int i = 0; i< logitbatch.size(); ++i)
+    {
+      getPredConf(logitbatch[i], preds[i], confs[i]);
+    }
+}
+
 double TempScaler::crossEntropyLossWithTemperature(const double& x, double& gx)
 {
   // return  value at x
@@ -163,22 +188,37 @@ lbfgsfloatval_t TempScaler::evaluate(
 int main(int argc, char **argv)
 {
   TempScaler celwt;
-  std::vector<int> labels {0, 3 , 5 ,3};
-  std::vector<std::vector<double> > logits{
+  std::vector<int> targetb {0, 3 , 5 ,3}; // 4 predictions over classes 0..5
+  std::vector<std::vector<double> > logitbatch{
     {50, 10, 3, 25, 10, 2},
       {-10, 20, 10, 20, 20, 1},
         {10, 50, 5, 30, 30, 40},
           {1, 20, 5, 15, 40, 4}};
 
-  celwt.setData(logits,labels);
+  std::vector<double> confb(logitbatch.size());
+  std::vector<int> predb(logitbatch.size());
 
-   std::cout<< "final temperature : " << celwt.calibrate() << std::endl;
+  celwt.getPredConfBatch(logitbatch,predb,confb);
+
 
   CalibrationError ce(3);
-  std::vector<double> confs {0.8,0.7,0.3, 1.0, 0.0};
-  std::vector<int> preds {0, 3, 4, 5, 2 };
-  std::vector<int> targets {0, 3, 2, 5, 7};
-  ce.setData(confs,preds, targets);
+  ce.setData(confb,predb, targetb);
+
+  std::cout << "mce: " << ce.MCE() << "    ece: " << ce.ECE() << std::endl;
+  ce.display();
+  ce.to_py("graphs_calibration.py");
+
+
+  celwt.setData(logitbatch,targetb);
+  double temperature = celwt.calibrate();
+  std::cout<< "final temperature : " << temperature << std::endl;
+
+  std::for_each(logitbatch.begin(), logitbatch.end(), [temperature](std::vector<double>& v){ std::for_each(v.begin(), v.end(), [temperature](double&l){l/=temperature;});});
+
+
+  celwt.getPredConfBatch(logitbatch,predb,confb);
+  ce.setData(confb,predb,targetb);
+
   std::cout << "mce: " << ce.MCE() << "    ece: " << ce.ECE() << std::endl;
   ce.display();
   ce.to_py("graphs.py");
@@ -232,8 +272,9 @@ void CalibrationError::fill_bins()
 
 void CalibrationError::clear_bins()
 {
-  for (auto v: bins_)
-    v.clear();
+  for (unsigned int i =0; i< bins_.size(); ++i)
+    bins_[i].clear();
+  cached_ = false;
 }
 
 double CalibrationError::bin_acc(int bi)

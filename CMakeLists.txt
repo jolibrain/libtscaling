@@ -14,7 +14,7 @@ endif()
 
 add_library(tscaling SHARED ${SOURCES})
 
-set (CMAKE_CXX_FLAGS "-Wall -std=c++11")
+set (CMAKE_CXX_FLAGS "-g -Wall -std=c++11")
 
 if (USE_LBFGSPP)
   find_package (Eigen3)

@@ -34,6 +34,10 @@ class TempScaler
 
   void setData(const std::vector<std::vector<double> >& logits, const std::vector<int>& labels);
 
+  void getPredConfBatch(std::vector<std::vector<double> > logitbatch, std::vector<int>& preds, std::vector<double>&confs);
+  void getPredConf(std::vector<double>& logits, int &pred, double&conf);
+
+
   double getTemperature();
   double calibrate();
 
