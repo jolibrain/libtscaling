@@ -2,7 +2,7 @@
 #include <math.h>
 #include <iostream>
 #include <fstream>
-
+#include <algorithm>
 #include "tscaling.h"
 
 TempScaler::TempScaler(const std::vector<std::vector<double> >&logits,
@@ -213,7 +213,7 @@ int main(int argc, char **argv)
   double temperature = celwt.calibrate();
   std::cout<< "final temperature : " << temperature << std::endl;
 
-  std::for_each(logitbatch.begin(), logitbatch.end(), [temperature](std::vector<double>& v){ std::for_each(v.begin(), v.end(), [temperature](double&l){l/=temperature;});});
+  for_each(logitbatch.begin(), logitbatch.end(), [temperature](std::vector<double>& v){ std::for_each(v.begin(), v.end(), [temperature](double&l){l/=temperature;});});
 
 
   celwt.getPredConfBatch(logitbatch,predb,confb);
