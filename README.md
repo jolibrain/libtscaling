@@ -14,7 +14,8 @@ Cmake based.  If USE_LBFGSPP is turned off, then LBFGS_LIB is mandatory (auto de
 in details:
 - `mkdir build && cd build`
 - `cmake .. -DUSE_LBFGSPP`    or `cmake ..`
-- make
+- `make`
+
 gives libtscaling.so
 
 #### Example usage
