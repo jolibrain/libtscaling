@@ -6,7 +6,7 @@
 #endif
 #include <vector>
 
-
+#include <string>
 
 class TempScaler
 {
