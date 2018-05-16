@@ -8,17 +8,12 @@ OPTION(FORCE_LBFGSPP "force use bundled LBFGSPP instead of system LBFGS")
 OPTION(BUILD_TEST "build test app")
 
 find_library(LBFGS_LIB lbfgs)
-if (NOT LBFGS_LIB)
+if (NOT LBFGS_LIB OR FORCE_LBFGSPP)
    set(USE_LBFGSPP ON)
 else()
    set(USE_LBFGSPP OFF) 
 endif()
 
-if (FORCE_LBFGSPP)
-   set(USE_LBFGSPP ON)
-else()
-   set(USE_LBFGSPP OFF) 
-endif()
 
 
 if (BUILD_TEST)
