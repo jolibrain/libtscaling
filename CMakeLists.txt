@@ -7,6 +7,9 @@ OPTION(USE_LBFGSPP "use bundled LBFGSPP instead of system LBFGS")
 OPTION(BUILD_TEST "build test app")
 
 find_library(LBFGS_LIB lbfgs)
+if (NOT LBFGS_LIB)
+   set(USE_LBFGSPP ON)
+endif()
 
 if (BUILD_TEST)
   add_executable(test_tscaling ${SOURCES})
