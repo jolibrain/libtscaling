@@ -4,7 +4,7 @@ include_directories(include)
 file(GLOB SOURCES "src/tscaling.cpp")
 file(GLOB TEST_SOURCES "src/test.cpp")
 
-OPTION(USE_LBFGSPP "use bundled LBFGSPP instead of system LBFGS")
+OPTION(FORCE_LBFGSPP "force use bundled LBFGSPP instead of system LBFGS")
 OPTION(BUILD_TEST "build test app")
 
 find_library(LBFGS_LIB lbfgs)
@@ -13,6 +13,13 @@ if (NOT LBFGS_LIB)
 else()
    set(USE_LBFGSPP OFF) 
 endif()
+
+if (FORCE_LBFGSPP)
+   set(USE_LBFGSPP ON)
+else()
+   set(USE_LBFGSPP OFF) 
+endif()
+
 
 if (BUILD_TEST)
   add_executable(test_tscaling ${TEST_SOURCES})
