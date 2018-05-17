@@ -7,13 +7,13 @@ Modern deep architectures have good prediction power, but are generally over con
 
 
 #### Dependencies
-Distillation temperature factor is computed via lbfgs, using either bundled liblbfgspp from (https://github.com/yixuan/LBFGSpp) that needs eigen, or liblbfgs available on unbuntu for instance (liblbfgs-dev).
+Either liblbfgs (liblbfgs-dev on ubuntu) or lbfgspp (http://github.com/yixuan/LBFGSpp) that needs eigen.
 
 #### Build
 Cmake based.  If USE_LBFGSPP is turned off, then LBFGS_LIB is mandatory (auto detected in standard pathes); inversely, if LBFGS_LIB is not found, USE_LBFGSPP is forced to on.
 in details:
 - `mkdir build && cd build`
-- `cmake .. -DUSE_LBFGSPP`    or `cmake ..`
+- `cmake ..` for using system liblbfgs    or `cmake .. -DLBFGSPP_LIB=path/to/lbfgspp_clone`
 - `make`
 
 gives libtscaling.so
