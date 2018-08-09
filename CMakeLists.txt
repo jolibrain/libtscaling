@@ -6,7 +6,7 @@ file(GLOB TEST_SOURCES "src/test.cpp")
 
 OPTION(FORCE_LBFGSPP "force use bundled LBFGSPP instead of system LBFGS")
 OPTION(BUILD_TEST "build test app")
-OPTION(BUILD_PYTHON "build python bindings")
+OPTION(BUILD_PYTHON "build python bindings using boost")
 
 find_path(LBFGSPP_LIB LBFGS.h HINTS ${CMAKE_SOURCE_DIR}/lbfgspp)
 find_library(LBFGS_LIB lbfgs)
@@ -18,13 +18,6 @@ else()
     set(USE_LBFGSPP OFF)
 endif()
 
-
-if (BUILD_PYTHON)
-  find_program(PYTHON "python")
-  find_package(SWIG REQUIRED)
-  include(${SWIG_USE_FILE})
-  add_subdirectory(python)
-endif()
 
 
 if (USE_LBFGSPP AND NOT LBFGSPP_LIB)
@@ -50,3 +43,11 @@ if (BUILD_TEST)
    target_link_libraries(test_tscaling tscaling)       
 endif()
 
+if (BUILD_PYTHON)
+  FIND_PACKAGE(Boost COMPONENTS python)
+  FIND_PACKAGE(PythonInterp)
+  FIND_PACKAGE(PythonLibs REQUIRED)
+  INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS} ${PYTHON_INCLUDE_DIRS})
+  LINK_LIBRARIES(${Boost_LIBRARIES} ${PYTHON_LIBRARIES} tscaling)
+  add_subdirectory(python_boost)
+endif()

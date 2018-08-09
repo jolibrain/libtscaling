@@ -46,6 +46,7 @@ TempScaler::TempScaler() : logits_(NULL), labels_(NULL)
 #endif
   }
 
+
 void TempScaler::setData(const std::vector<std::vector<double> >& logits, const std::vector<int>& labels)
 {
   logits_ = &logits;
@@ -100,6 +101,7 @@ void TempScaler::getPredConf(std::vector<double>& logits, int &pred, double&conf
 {
   double sum = exp(logits[0]);
   double max_exp = sum;
+  pred = 0;
   for (unsigned int i =1; i<logits.size(); ++i)
     {
       double cur_exp = exp(logits[i]);

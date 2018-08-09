@@ -7,7 +7,9 @@ parser = argparse.ArgumentParser(description='LMDB splitter')
 parser.add_argument('--input',help='input lmdb')
 parser.add_argument('--test-output',help='output lmdb (for test)')
 parser.add_argument('--val-output',help='output lmdb (for validation)')
-parser.add_argument('--test-prop', help='test proportion (val proportion is 1-test_prop)',type=float)
+parser.add_argument('--test-prop', help='test proportion (val proportion is 1-test_prop)',
+                    default= .5, type=float)
+parser.add_argument('--test-num', help='number of items in test db', type=int)
 args = parser.parse_args()
 
 
@@ -20,7 +22,10 @@ for key, value in cursor:
     data.append([key, value])
 
 all_indexes = set(xrange(len(data)))
-test_indexes = random.sample(all_indexes,int(float(len(data))*args.test_prop))
+if args.test_num is not None:
+    test_indexes = random.sample(all_indexes,int(args.test_num))
+else:
+    test_indexes = random.sample(all_indexes,int(float(len(data))*args.test_prop))
 val_indexes = list(all_indexes - set(test_indexes))
 
 
