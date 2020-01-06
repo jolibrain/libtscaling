@@ -36,6 +36,20 @@ boost::python::tuple getPredConfPy(TempScaler& ts, boost::python::list& llogits)
   return boost::python::make_tuple(pred,conf);
 }
 
+boost::python::tuple getPredConfWithTemperaturePy(TempScaler& ts, boost::python::list& llogits, double temperature)
+{
+  std::vector<double> logits;
+  for (int i=0; i< len(llogits); ++i)
+    {
+      logits.push_back(boost::python::extract<double>(llogits[i]));
+    }
+  int pred;
+  double conf;
+  ts.getPredConfWithTemperature(logits, temperature, pred,conf);
+  return boost::python::make_tuple(pred,conf);
+}
+
+
 BOOST_PYTHON_MODULE(pytscaling)
 {
   using namespace boost::python;
@@ -46,6 +60,7 @@ BOOST_PYTHON_MODULE(pytscaling)
   class_<TempScaler>("TempScaler")
     .def("setData", &setDataPy)
     .def("getPredConf", &getPredConfPy)
+    .def("getPredConfWithTemperature", &getPredConfWithTemperaturePy)
     .def("calibrate", &TempScaler::calibrate)
     .def("getTemperature", &TempScaler::getTemperature)
     ;

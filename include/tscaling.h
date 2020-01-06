@@ -36,6 +36,7 @@ class TempScaler
 
   void getPredConfBatch(std::vector<std::vector<double> > logitbatch, std::vector<int>& preds, std::vector<double>&confs);
   void getPredConf(std::vector<double>& logits, int &pred, double&conf);
+  void getPredConfWithTemperature(std::vector<double>& logits, double temperature, int &pred, double&conf);
 
 
   double getTemperature();

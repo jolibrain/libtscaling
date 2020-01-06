@@ -115,6 +115,25 @@ void TempScaler::getPredConf(std::vector<double>& logits, int &pred, double&conf
   conf = max_exp / sum;
 }
 
+void TempScaler::getPredConfWithTemperature(std::vector<double>& logits, double temperature, int &pred, double&conf)
+{
+  double sum = exp(logits[0]/temperature);
+  double max_exp = sum;
+  pred = 0;
+  for (unsigned int i =1; i<logits.size(); ++i)
+    {
+      double cur_exp = exp(logits[i]/temperature);
+      sum += cur_exp;
+      if (cur_exp > max_exp)
+        {
+          max_exp = cur_exp;
+          pred = i;
+        }
+    }
+  conf = max_exp / sum;
+}
+
+
 void TempScaler::getPredConfBatch(std::vector<std::vector<double> > logitbatch, std::vector<int>& preds, std::vector<double>&confs)
 {
   for (unsigned int i = 0; i< logitbatch.size(); ++i)
