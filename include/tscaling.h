@@ -23,8 +23,8 @@ class TempScaler
   lbfgs_parameter_t* params_;
 #endif
 
-  const std::vector<std::vector<double> >* logits_;
-  const std::vector<int>* labels_;
+  std::vector<std::vector<double> > logits_;
+  std::vector<int> labels_;
 
 
  public:

@@ -7,7 +7,7 @@
 
 TempScaler::TempScaler(const std::vector<std::vector<double> >&logits,
                            const std::vector<int>& labels) :
-  logits_(&logits), labels_(&labels)
+  logits_(logits), labels_(labels)
 {
 #ifdef LBFGSPP
   t_ =  Eigen::VectorXd::Ones(1);
@@ -26,7 +26,7 @@ TempScaler::TempScaler(const std::vector<std::vector<double> >&logits,
 #endif
 }
 
-TempScaler::TempScaler() : logits_(NULL), labels_(NULL)
+TempScaler::TempScaler()
 {
 #ifdef LBFGSPP
     t_ =  Eigen::VectorXd::Ones(1);
@@ -49,8 +49,19 @@ TempScaler::TempScaler() : logits_(NULL), labels_(NULL)
 
 void TempScaler::setData(const std::vector<std::vector<double> >& logits, const std::vector<int>& labels)
 {
-  logits_ = &logits;
-  labels_ = &labels;
+  logits_ = logits;
+  for (std::vector<double> l : logits_)
+    {
+      for (double ll : l)
+        std::cout << ll << " ";
+      std::cout << std::endl;
+    }
+
+  labels_ = labels;
+  for (int l : labels_)
+    std::cout << l << " ";
+  std::cout << std::endl;
+
 }
 
 
@@ -66,18 +77,35 @@ double TempScaler::getTemperature()
 
 double TempScaler::calibrate()
 {
-  if (logits_ == NULL || labels_ == NULL)
+  if (logits_.size()  == 0 || labels_.size() == 0)
     {
       std::cerr << "no labels/logits given to calibration";
       return -1;
     }
+
+  for (std::vector<double> l : logits_)
+    {
+      for (double ll : l)
+        std::cout << ll << " ";
+      std::cout << std::endl;
+    }
+
+  for (int l : labels_)
+    std::cout << l << " ";
+  std::cout << std::endl;
+
+
+
 #ifdef LBFGSPP
   double fx;
+  std::cout << "about to minimize LBFGSPP" << std::endl;
   solver_->minimize(*this, t_, fx);
 #else
+  std::cout << "about to minimize NOLBFGSPP" << std::endl;
   lbfgsfloatval_t fx;
   lbfgs(1, &t_, &fx, _evaluate, NULL, this, params_);
 #endif
+  std::cout << "minimized" << std::endl;
   return getTemperature();
 }
 
@@ -149,14 +177,14 @@ double TempScaler::crossEntropyLossWithTemperature(const double& x, double& gx)
   // now the computation of crossentropyloss and its derivative, averaged over batch size
 
   double temperature = x;
-  int nlogits = (*logits_)[0].size();
+  int nlogits = logits_[0].size();
   double sum_fx = 0;
   double sum_gfx = 0;
 
-  for (unsigned int bi = 0; bi < logits_->size(); ++bi)
+  for (unsigned int bi = 0; bi < logits_.size(); ++bi)
     {
-      const std::vector<double>& logits = (*logits_)[bi];
-      const int label = (*labels_)[bi];
+      const std::vector<double>& logits = logits_[bi];
+      const int label = labels_[bi];
 
       double sum1 = 0;
       double sum2 = 0;
@@ -172,8 +200,8 @@ double TempScaler::crossEntropyLossWithTemperature(const double& x, double& gx)
 
     }
 
-  gx = sum_gfx / (double)logits_->size();
-  return sum_fx / (double)logits_->size();
+  gx = sum_gfx / (double)logits_.size();
+  return sum_fx / (double)logits_.size();
 }
 
 #ifndef LBFGSPP
